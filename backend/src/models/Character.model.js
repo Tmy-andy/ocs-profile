@@ -62,6 +62,11 @@ const characterSchema = new mongoose.Schema(
     isPublic: {
       type: Boolean,
       default: true
+    },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Character must have an owner']
     }
   },
   {
@@ -75,6 +80,7 @@ const characterSchema = new mongoose.Schema(
 characterSchema.index({ name: 1 });
 characterSchema.index({ tags: 1 });
 characterSchema.index({ createdAt: -1 });
+characterSchema.index({ owner: 1 });
 // Note: slug already has unique: true in schema, no need for separate index
 
 // Pre-save hook to generate slug

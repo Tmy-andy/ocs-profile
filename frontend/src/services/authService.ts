@@ -35,6 +35,10 @@ const authService = {
     return user;
   },
 
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    await api.post('/auth/change-password', { currentPassword, newPassword });
+  },
+
   createInvite: async (): Promise<Invite> => {
     const response = await api.post('/auth/invites');
     return response.data.data;

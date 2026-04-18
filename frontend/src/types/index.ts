@@ -8,8 +8,23 @@ export interface Character {
   backstory: string;
   tags: string[];
   isPublic: boolean;
+  owner?: {
+    _id: string;
+    username: string;
+    displayName?: string;
+  } | string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UserSummary {
+  _id: string;
+  username: string;
+  displayName?: string;
+  email?: string;
+  role: 'admin' | 'member';
+  charactersCount: number;
+  createdAt: string;
 }
 
 export interface User {

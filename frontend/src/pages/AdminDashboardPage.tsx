@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import characterService from '../services/characterService';
 import authService from '../services/authService';
-import { Character } from '../types';
+import userService from '../services/userService';
+import { Character, User, UserSummary } from '../types';
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
@@ -25,25 +26,81 @@ const AdminDashboardPage = () => {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [me, setMe] = useState<User | null>(null);
+  const [users, setUsers] = useState<UserSummary[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userDeleteLoading, setUserDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if authenticated
     if (!authService.isAuthenticated()) {
       navigate('/login');
       return;
     }
 
-    fetchCharacters();
+    (async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setMe({ ...currentUser, token: authService.getToken() || '' });
+
+        await fetchCharacters(currentUser.username);
+
+        if (currentUser.role === 'admin') {
+          await fetchUsers();
+        }
+      } catch (error: any) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          authService.logout();
+          navigate('/login');
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [navigate]);
 
-  const fetchCharacters = async () => {
+  const fetchCharacters = async (ownerUsername: string) => {
     try {
-      const data = await characterService.getAll({ page: 1, limit: 100 });
+      const data = await characterService.getAll({ page: 1, limit: 100, owner: ownerUsername });
       setCharacters(data.data);
     } catch (error) {
       console.error('Failed to fetch characters:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const data = await userService.getAll();
+      setUsers(data);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
     } finally {
-      setLoading(false);
+      setUsersLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, username: string, charCount: number) => {
+    const msg = charCount > 0
+      ? `Xóa user "${username}" sẽ xóa luôn ${charCount} character của họ. Tiếp tục?`
+      : `Xóa user "${username}"?`;
+    if (!window.confirm(msg)) return;
+
+    setUserDeleteLoading(userId);
+    try {
+      await userService.delete(userId);
+      setUsers(users.filter(u => u._id !== userId));
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Xóa user thất bại');
+    } finally {
+      setUserDeleteLoading(null);
     }
   };
 
@@ -105,8 +162,7 @@ const AdminDashboardPage = () => {
     setEditLoading(true);
     try {
       await characterService.update(editingCharacter._id, editFormData);
-      // Refresh characters list
-      await fetchCharacters();
+      if (me) await fetchCharacters(me.username);
       setEditingCharacter(null);
       alert('Cập nhật thành công!');
     } catch (error: any) {
@@ -136,6 +192,34 @@ const AdminDashboardPage = () => {
       setInviteOpen(false);
     } finally {
       setInviteLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Mật khẩu mới nhập lại không khớp');
+      return;
+    }
+
+    if (passwordForm.newPassword === passwordForm.currentPassword) {
+      setPasswordError('Mật khẩu mới phải khác mật khẩu hiện tại');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      alert('Đổi mật khẩu thành công. Vui lòng đăng nhập lại.');
+      authService.logout();
+      navigate('/login');
+    } catch (error: any) {
+      const msg = error.response?.data?.errors?.[0] || error.response?.data?.message || 'Đổi mật khẩu thất bại';
+      setPasswordError(msg);
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -192,6 +276,20 @@ const AdminDashboardPage = () => {
                 <span>Trang chủ</span>
               </button>
               
+              <button
+                onClick={() => {
+                  setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                  setPasswordError(null);
+                  setPasswordOpen(true);
+                }}
+                className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <span>Đổi mật khẩu</span>
+              </button>
+
               <button
                 onClick={handleCreateInvite}
                 className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all flex items-center gap-2"
@@ -390,6 +488,86 @@ const AdminDashboardPage = () => {
             </table>
           </div>
         </div>
+
+        {/* Users Table (admin only) */}
+        {me?.role === 'admin' && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mt-8">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Danh sách Users</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Xóa user sẽ xóa luôn toàn bộ character của họ</p>
+              </div>
+              <span className="px-3 py-1 bg-blue-50 text-neon-blue text-sm rounded-lg border border-blue-100">
+                {users.length} users
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên hiển thị</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Characters</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {usersLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500 text-sm">
+                        Đang tải...
+                      </td>
+                    </tr>
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500 text-sm">
+                        Chưa có user nào
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((u) => (
+                      <tr key={u._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="font-medium text-gray-900">{u.username}</span>
+                          {me?.id === u._id && (
+                            <span className="ml-2 text-xs text-gray-400">(you)</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">{u.displayName || '—'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{u.email || '—'}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 text-xs rounded-md border ${
+                            u.role === 'admin'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : 'bg-gray-50 text-gray-700 border-gray-200'
+                          }`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700">{u.charactersCount}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end">
+                            <button
+                              onClick={() => handleDeleteUser(u._id, u.username, u.charactersCount)}
+                              disabled={userDeleteLoading === u._id || me?.id === u._id}
+                              className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-sm transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                              title={me?.id === u._id ? 'Không thể xóa chính mình' : ''}
+                            >
+                              {userDeleteLoading === u._id ? '...' : 'Xóa'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Character View Modal */}
@@ -640,6 +818,103 @@ const AdminDashboardPage = () => {
                   type="button"
                   onClick={() => setEditingCharacter(null)}
                   className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {passwordOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => !passwordLoading && setPasswordOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Đổi mật khẩu</h2>
+              <button
+                onClick={() => setPasswordOpen(false)}
+                disabled={passwordLoading}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="p-6 space-y-4">
+              {passwordError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-600 text-sm">{passwordError}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mật khẩu hiện tại <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                  required
+                  autoComplete="current-password"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mật khẩu mới <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+                  placeholder="ít nhất 6 ký tự"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nhập lại mật khẩu mới <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="flex-1 px-4 py-2.5 bg-neon-blue hover:bg-blue-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {passwordLoading ? 'Đang đổi...' : 'Đổi mật khẩu'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPasswordOpen(false)}
+                  disabled={passwordLoading}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
                 >
                   Hủy
                 </button>

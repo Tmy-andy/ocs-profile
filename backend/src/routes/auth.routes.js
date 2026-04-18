@@ -4,6 +4,7 @@ import {
   login,
   getMe,
   setupAdmin,
+  changePassword,
   createInvite,
   getInvite,
   registerFromInvite
@@ -53,9 +54,19 @@ const registerValidation = [
     .withMessage('Passwords do not match')
 ];
 
+const changePasswordValidation = [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword')
+    .notEmpty().withMessage('New password is required')
+    .isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+    .custom((value, { req }) => value !== req.body.currentPassword)
+    .withMessage('New password must differ from current password')
+];
+
 router.post('/login', loginValidation, login);
 router.get('/me', protect, getMe);
 router.post('/setup', setupValidation, setupAdmin);
+router.post('/change-password', protect, changePasswordValidation, changePassword);
 
 router.post('/invites', protect, adminOnly, createInvite);
 router.get('/invites/:token', getInvite);

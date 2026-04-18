@@ -1,34 +1,46 @@
 import Character from '../models/Character.model.js';
+import User from '../models/User.model.js';
 import { validationResult } from 'express-validator';
 
-// @desc    Get all characters
-// @route   GET /api/characters
+// @desc    Get all characters (optionally filtered by owner username)
+// @route   GET /api/characters?owner=<username>
 // @access  Public
 export const getAllCharacters = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, search, tags } = req.query;
-    
+    const { page = 1, limit = 10, search, tags, owner } = req.query;
+
     const query = { isPublic: true };
-    
-    // Search by name
+
+    if (owner) {
+      const ownerUser = await User.findOne({ username: owner.toLowerCase() });
+      if (!ownerUser) {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: { page: 1, limit: parseInt(limit), total: 0, pages: 0 }
+        });
+      }
+      query.owner = ownerUser._id;
+    }
+
     if (search) {
       query.name = { $regex: search, $options: 'i' };
     }
-    
-    // Filter by tags
+
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim());
       query.tags = { $in: tagArray };
     }
-    
+
     const characters = await Character.find(query)
+      .populate('owner', 'username displayName')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
       .select('-__v');
-    
+
     const total = await Character.countDocuments(query);
-    
+
     res.status(200).json({
       success: true,
       data: characters,
@@ -50,25 +62,21 @@ export const getAllCharacters = async (req, res, next) => {
 export const getCharacterById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    // Try to find by slug first, then by _id
     let character;
-    
-    // Check if it looks like a MongoDB ObjectId (24 hex characters)
+
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      character = await Character.findById(id).select('-__v');
+      character = await Character.findById(id).populate('owner', 'username displayName').select('-__v');
     } else {
-      // Otherwise, treat it as a slug
-      character = await Character.findOne({ slug: id }).select('-__v');
+      character = await Character.findOne({ slug: id }).populate('owner', 'username displayName').select('-__v');
     }
-    
+
     if (!character) {
       return res.status(404).json({
         success: false,
         message: 'Character not found'
       });
     }
-    
+
     res.status(200).json({
       success: true,
       data: character
@@ -86,10 +94,9 @@ export const getCharacterById = async (req, res, next) => {
 
 // @desc    Create new character
 // @route   POST /api/characters
-// @access  Public (in production, should be protected)
+// @access  Private
 export const createCharacter = async (req, res, next) => {
   try {
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -97,14 +104,16 @@ export const createCharacter = async (req, res, next) => {
         errors: errors.array()
       });
     }
-    
-    // Generate unique character ID if not provided
+
     if (!req.body.characterId) {
       req.body.characterId = `c${Date.now().toString(36)}${Math.random().toString(36).substr(2, 9)}`;
     }
-    
-    const character = await Character.create(req.body);
-    
+
+    const character = await Character.create({
+      ...req.body,
+      owner: req.user._id
+    });
+
     res.status(201).json({
       success: true,
       data: character,
@@ -121,12 +130,11 @@ export const createCharacter = async (req, res, next) => {
   }
 };
 
-// @desc    Update character
+// @desc    Update character (owner only)
 // @route   PUT /api/characters/:id
-// @access  Public (in production, should be protected)
+// @access  Private
 export const updateCharacter = async (req, res, next) => {
   try {
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -134,23 +142,29 @@ export const updateCharacter = async (req, res, next) => {
         errors: errors.array()
       });
     }
-    
-    const character = await Character.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true
-      }
-    ).select('-__v');
-    
+
+    const character = await Character.findById(req.params.id);
+
     if (!character) {
       return res.status(404).json({
         success: false,
         message: 'Character not found'
       });
     }
-    
+
+    if (!character.owner.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only edit your own characters'
+      });
+    }
+
+    // Prevent owner from being changed via update payload
+    delete req.body.owner;
+
+    Object.assign(character, req.body);
+    await character.save();
+
     res.status(200).json({
       success: true,
       data: character,
@@ -167,20 +181,29 @@ export const updateCharacter = async (req, res, next) => {
   }
 };
 
-// @desc    Delete character
+// @desc    Delete character (owner only — admin cannot delete others')
 // @route   DELETE /api/characters/:id
-// @access  Public (in production, should be protected)
+// @access  Private
 export const deleteCharacter = async (req, res, next) => {
   try {
-    const character = await Character.findByIdAndDelete(req.params.id);
-    
+    const character = await Character.findById(req.params.id);
+
     if (!character) {
       return res.status(404).json({
         success: false,
         message: 'Character not found'
       });
     }
-    
+
+    if (!character.owner.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own characters'
+      });
+    }
+
+    await character.deleteOne();
+
     res.status(200).json({
       success: true,
       data: {},

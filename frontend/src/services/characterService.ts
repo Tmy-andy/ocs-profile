@@ -8,6 +8,7 @@ export const characterService = {
     limit?: number;
     search?: string;
     tags?: string;
+    owner?: string;
   }): Promise<PaginatedResponse<Character>> => {
     const response = await api.get('/characters', { params });
     return response.data;
