@@ -20,6 +20,11 @@ const AdminDashboardPage = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState(false);
 
   useEffect(() => {
     // Check if authenticated
@@ -116,6 +121,35 @@ const AdminDashboardPage = () => {
     navigate('/');
   };
 
+  const handleCreateInvite = async () => {
+    setInviteOpen(true);
+    setInviteLink(null);
+    setInviteExpiresAt(null);
+    setInviteLoading(true);
+    try {
+      const invite = await authService.createInvite();
+      const link = `${window.location.origin}/register/${invite.token}`;
+      setInviteLink(link);
+      setInviteExpiresAt(invite.expiresAt);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Tạo link thất bại');
+      setInviteOpen(false);
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleCopyInvite = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopyFeedback(true);
+      setTimeout(() => setCopyFeedback(false), 2000);
+    } catch {
+      alert('Không thể copy. Hãy copy thủ công.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -158,6 +192,16 @@ const AdminDashboardPage = () => {
                 <span>Trang chủ</span>
               </button>
               
+              <button
+                onClick={handleCreateInvite}
+                className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                <span>Tạo tài khoản</span>
+              </button>
+
               <button
                 onClick={() => navigate('/create')}
                 className="px-5 py-2.5 bg-neon-blue hover:bg-blue-600 text-white font-medium rounded-lg transition-all flex items-center gap-2 shadow-sm hover:shadow"
@@ -601,6 +645,74 @@ const AdminDashboardPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Modal */}
+      {inviteOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setInviteOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Link đăng ký</h2>
+              <button
+                onClick={() => setInviteOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {inviteLoading ? (
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <div className="w-10 h-10 border-4 border-gray-200 border-t-neon-blue rounded-full animate-spin"></div>
+                  <p className="text-gray-600 text-sm">Đang tạo link...</p>
+                </div>
+              ) : inviteLink ? (
+                <>
+                  <p className="text-sm text-gray-600">
+                    Gửi link này cho người bạn muốn mời. Link có hiệu lực <strong>48 tiếng</strong> và chỉ dùng được <strong>một lần</strong>.
+                  </p>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={inviteLink}
+                      readOnly
+                      className="w-full px-4 py-3 pr-24 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700 font-mono"
+                      onFocus={(e) => e.target.select()}
+                    />
+                    <button
+                      onClick={handleCopyInvite}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-neon-blue hover:bg-blue-600 text-white text-sm font-medium rounded-md transition-colors"
+                    >
+                      {copyFeedback ? 'Đã copy!' : 'Copy'}
+                    </button>
+                  </div>
+
+                  {inviteExpiresAt && (
+                    <p className="text-xs text-gray-500">
+                      Hết hạn lúc: {new Date(inviteExpiresAt).toLocaleString('vi-VN')}
+                    </p>
+                  )}
+
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-800">
+                      ⚠️ Sau khi người được mời đăng ký xong, link này sẽ tự động vô hiệu.
+                    </p>
+                  </div>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       )}

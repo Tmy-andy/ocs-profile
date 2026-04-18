@@ -15,12 +15,37 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minLength: [6, 'Password must be at least 6 characters'],
-      select: false // Don't return password by default
+      select: false
+    },
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true
+    },
+    displayName: {
+      type: String,
+      trim: true,
+      maxLength: [50, 'Display name cannot exceed 50 characters']
     },
     role: {
       type: String,
-      enum: ['admin'],
-      default: 'admin'
+      enum: ['admin', 'member'],
+      default: 'member'
+    },
+    isActivated: {
+      type: Boolean,
+      default: false
+    },
+    inviteToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+      select: false
+    },
+    inviteExpiresAt: {
+      type: Date
     }
   },
   {
@@ -28,18 +53,16 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
   }
-  
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };

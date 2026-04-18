@@ -4,7 +4,6 @@ import User from '../models/User.model.js';
 export const protect = async (req, res, next) => {
   let token;
 
-  // Check for token in headers
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
@@ -17,16 +16,21 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
 
-    // Get user from token
     req.user = await User.findById(decoded.id);
 
     if (!req.user) {
       return res.status(401).json({
         success: false,
         message: 'User not found'
+      });
+    }
+
+    if (!req.user.isActivated) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is not activated'
       });
     }
 
@@ -37,4 +41,14 @@ export const protect = async (req, res, next) => {
       message: 'Not authorized to access this route'
     });
   }
+};
+
+export const adminOnly = (req, res, next) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required'
+    });
+  }
+  next();
 };
