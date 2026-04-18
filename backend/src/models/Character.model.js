@@ -39,6 +39,7 @@ const characterSchema = new mongoose.Schema(
       }
     },
     isPublic: { type: Boolean, default: true },
+    displayOrder: { type: Number, default: 0 },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -100,7 +101,8 @@ const characterSchema = new mongoose.Schema(
     additional: {
       skills: { type: String, default: '' },
       assets: { type: String, default: '' },
-      secrets: { type: String, default: '' }
+      secrets: { type: String, default: '' },
+      other: { type: String, default: '' }
     }
   },
   {

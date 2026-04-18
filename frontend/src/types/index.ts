@@ -48,6 +48,7 @@ export interface CharacterAdditional {
   skills?: string;
   assets?: string;
   secrets?: string;
+  other?: string;
 }
 
 export interface Character {
@@ -58,6 +59,7 @@ export interface Character {
   avatarImage: string;
   tags: string[];
   isPublic: boolean;
+  displayOrder?: number;
   owner?: {
     _id: string;
     username: string;

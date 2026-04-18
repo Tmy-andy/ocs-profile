@@ -20,6 +20,48 @@ const AdminDashboardPage = () => {
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userDeleteLoading, setUserDeleteLoading] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
+
+  const handleDragStart = (index: number) => (e: React.DragEvent) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (index: number) => async (e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) {
+      handleDragEnd();
+      return;
+    }
+    const next = [...characters];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(index, 0, moved);
+    setCharacters(next);
+    handleDragEnd();
+
+    setReordering(true);
+    try {
+      await characterService.reorder(next.map(c => c._id));
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Cập nhật thứ tự thất bại');
+      if (me) await fetchCharacters(me.slug || me.username);
+    } finally {
+      setReordering(false);
+    }
+  };
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -280,14 +322,19 @@ const AdminDashboardPage = () => {
 
         {/* Characters Table */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Danh sách Characters</h2>
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Danh sách Characters</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Kéo hàng để sắp xếp độ ưu tiên hiển thị</p>
+            </div>
+            {reordering && <span className="text-xs text-neon-blue">Đang lưu thứ tự...</span>}
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="w-10"></th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Character
                   </th>
@@ -308,7 +355,7 @@ const AdminDashboardPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {characters.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                           <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,8 +373,21 @@ const AdminDashboardPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  characters.map((character) => (
-                    <tr key={character._id} className="hover:bg-gray-50 transition-colors">
+                  characters.map((character, index) => (
+                    <tr
+                      key={character._id}
+                      draggable
+                      onDragStart={handleDragStart(index)}
+                      onDragOver={handleDragOver(index)}
+                      onDrop={handleDrop(index)}
+                      onDragEnd={handleDragEnd}
+                      className={`hover:bg-gray-50 transition-colors ${
+                        dragIndex === index ? 'opacity-40' : ''
+                      } ${dragOverIndex === index && dragIndex !== index ? 'border-t-2 border-neon-blue' : ''}`}
+                    >
+                      <td className="px-2 text-center cursor-move text-gray-400 hover:text-gray-600 select-none" title="Kéo để sắp xếp">
+                        ⋮⋮
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <img

@@ -127,7 +127,7 @@ const CharacterPage = () => {
   const hasDetails = anyFilled(details, ['habits', 'flaws', 'likes', 'dislikes', 'intimateLife']);
   const hasComplex = complexRels.length > 0;
   const hasBackstory = !isEmpty(character.backstory);
-  const hasAdditional = anyFilled(additional, ['skills', 'assets', 'secrets']);
+  const hasAdditional = anyFilled(additional, ['skills', 'assets', 'secrets', 'other']);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#1a0a1f] to-[#0a0a0f] py-8 px-4">
@@ -295,6 +295,7 @@ const CharacterPage = () => {
                 <Block label="Kỹ năng & Năng lực" value={additional.skills} />
                 <Block label="Tài sản" value={additional.assets} />
                 <Block label='Một số điều chỉ "người ấy" biết' value={additional.secrets} />
+                <Block label="Khác" value={additional.other} />
               </SectionBox>
             )}
           </div>

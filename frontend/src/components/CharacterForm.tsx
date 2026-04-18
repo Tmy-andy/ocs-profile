@@ -29,7 +29,7 @@ type FormData = {
   details: { habits: string; flaws: string; likes: string; dislikes: string; intimateLife: string };
   complexRelationships: { description: string; character: string; text: string }[];
   backstory: string;
-  additional: { skills: string; assets: string; secrets: string };
+  additional: { skills: string; assets: string; secrets: string; other: string };
 };
 
 const emptyForm: FormData = {
@@ -49,7 +49,7 @@ const emptyForm: FormData = {
   details: { habits: '', flaws: '', likes: '', dislikes: '', intimateLife: '' },
   complexRelationships: [],
   backstory: '',
-  additional: { skills: '', assets: '', secrets: '' },
+  additional: { skills: '', assets: '', secrets: '', other: '' },
 };
 
 const statusOptions: { value: RelationshipStatus; label: string }[] = [
@@ -113,6 +113,7 @@ const fromCharacter = (c: Character): FormData => ({
     skills: c.additional?.skills || '',
     assets: c.additional?.assets || '',
     secrets: c.additional?.secrets || '',
+    other: c.additional?.other || '',
   },
 });
 
@@ -409,6 +410,7 @@ const CharacterForm = ({ initial, submitLabel, onSubmit, onCancel, loading, erro
         <Field label="Kỹ năng & Năng lực"><textarea rows={3} value={form.additional.skills} onChange={e => updateNested('additional', 'skills', e.target.value)} className={inputClass} /></Field>
         <Field label="Tài sản"><textarea rows={2} value={form.additional.assets} onChange={e => updateNested('additional', 'assets', e.target.value)} className={inputClass} /></Field>
         <Field label='Một số điều chỉ "người ấy" biết'><textarea rows={3} value={form.additional.secrets} onChange={e => updateNested('additional', 'secrets', e.target.value)} className={inputClass} /></Field>
+        <Field label="Khác"><textarea rows={3} value={form.additional.other} onChange={e => updateNested('additional', 'other', e.target.value)} className={inputClass} /></Field>
       </Section>
 
       {/* Actions */}

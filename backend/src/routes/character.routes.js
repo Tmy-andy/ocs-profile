@@ -5,7 +5,8 @@ import {
   getCharacterById,
   createCharacter,
   updateCharacter,
-  deleteCharacter
+  deleteCharacter,
+  reorderCharacters
 } from '../controllers/character.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -35,6 +36,8 @@ const characterValidation = [
 ];
 
 // Routes
+router.patch('/reorder', protect, reorderCharacters);
+
 router.route('/')
   .get(getAllCharacters)
   .post(protect, characterValidation, createCharacter); // Protected

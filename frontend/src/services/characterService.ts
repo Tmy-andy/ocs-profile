@@ -45,6 +45,12 @@ export const characterService = {
     const response = await api.delete(`/characters/${id}`);
     return response.data;
   },
+
+  // Reorder characters
+  reorder: async (orderedIds: string[]): Promise<ApiResponse<{}>> => {
+    const response = await api.patch('/characters/reorder', { orderedIds });
+    return response.data;
+  },
 };
 
 export default characterService;

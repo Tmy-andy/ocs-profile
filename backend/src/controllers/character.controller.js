@@ -35,7 +35,7 @@ export const getAllCharacters = async (req, res, next) => {
 
     const characters = await Character.find(query)
       .populate('owner', 'username slug displayName')
-      .sort({ createdAt: -1 })
+      .sort({ displayOrder: 1, createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
       .select('-__v');
@@ -183,6 +183,36 @@ export const updateCharacter = async (req, res, next) => {
         success: false,
         message: 'Invalid character ID format'
       });
+    }
+    next(error);
+  }
+};
+
+// @desc    Reorder characters (owner only)
+// @route   PATCH /api/characters/reorder
+// @access  Private
+export const reorderCharacters = async (req, res, next) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'orderedIds must be a non-empty array' });
+    }
+
+    const characters = await Character.find({ _id: { $in: orderedIds } }).select('_id owner');
+    const notOwned = characters.find(c => !c.owner.equals(req.user._id));
+    if (notOwned || characters.length !== orderedIds.length) {
+      return res.status(403).json({ success: false, message: 'You can only reorder your own characters' });
+    }
+
+    const ops = orderedIds.map((id, index) => ({
+      updateOne: { filter: { _id: id }, update: { $set: { displayOrder: index } } }
+    }));
+    await Character.bulkWrite(ops);
+
+    res.status(200).json({ success: true, message: 'Order updated' });
+  } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(400).json({ success: false, message: 'Invalid character ID format' });
     }
     next(error);
   }
