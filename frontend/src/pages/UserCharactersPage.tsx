@@ -130,7 +130,7 @@ const UserCharactersPage = () => {
                       <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">
                         {character.name}
                       </h3>
-                      <p className="text-sm text-gray-400 line-clamp-2 mb-2">{character.about}</p>
+                      <p className="text-sm text-gray-400 line-clamp-2 mb-2">{character.core?.occupation || ''}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {character.tags.slice(0, 3).map((tag, index) => (
                           <Tag key={index}>

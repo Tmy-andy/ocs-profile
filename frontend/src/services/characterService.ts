@@ -1,7 +1,15 @@
 import api from './api';
+import authService from './authService';
 import { Character, ApiResponse, PaginatedResponse } from '../types';
 
 export const characterService = {
+  getMine: async (): Promise<PaginatedResponse<Character>> => {
+    const me = await authService.getCurrentUser();
+    const ownerKey = me.slug || me.username;
+    const response = await api.get('/characters', { params: { owner: ownerKey, limit: 100 } });
+    return response.data;
+  },
+
   // Get all characters
   getAll: async (params?: {
     page?: number;

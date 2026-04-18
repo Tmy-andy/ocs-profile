@@ -50,7 +50,7 @@ const HomePage = () => {
                 setSlug(e.target.value);
                 setError(null);
               }}
-              placeholder="Nhập slug chủ sở hữu (vd: andy)"
+              placeholder="Nhập slug chủ sở hữu"
               autoFocus
               className="w-full px-6 py-4 rounded-xl bg-dark-700/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-all duration-300"
             />

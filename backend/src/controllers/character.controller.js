@@ -65,10 +65,16 @@ export const getCharacterById = async (req, res, next) => {
     const { id } = req.params;
     let character;
 
+    const populateArgs = [
+      { path: 'owner', select: 'username slug displayName' },
+      { path: 'core.partner.character', select: 'name slug owner', populate: { path: 'owner', select: 'slug username' } },
+      { path: 'complexRelationships.character', select: 'name slug owner', populate: { path: 'owner', select: 'slug username' } }
+    ];
+
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      character = await Character.findById(id).populate('owner', 'username slug displayName').select('-__v');
+      character = await Character.findById(id).populate(populateArgs).select('-__v');
     } else {
-      character = await Character.findOne({ slug: id }).populate('owner', 'username slug displayName').select('-__v');
+      character = await Character.findOne({ slug: id }).populate(populateArgs).select('-__v');
     }
 
     if (!character) {

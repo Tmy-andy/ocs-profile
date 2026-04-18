@@ -1,11 +1,61 @@
+export type RelationshipStatus = '' | 'single' | 'dating' | 'married' | 'single-parent';
+
+export interface RelationshipLink {
+  description?: string;
+  character?: string | { _id: string; name: string; slug?: string; owner?: any } | null;
+  text?: string;
+}
+
+export interface CharacterCore {
+  fullName?: string;
+  gender?: string;
+  birthday?: string;
+  age?: string;
+  mbti?: string;
+  appearance?: string;
+  physique?: string;
+  occupation?: string;
+  workplace?: string;
+  nationality?: string;
+  residence?: string;
+  relationshipStatus?: RelationshipStatus;
+  partner?: RelationshipLink;
+  personality?: string;
+}
+
+export interface CharacterVisual {
+  face?: string;
+  hair?: string;
+  skin?: string;
+}
+
+export interface CharacterAesthetics {
+  outfit?: string;
+  colorPalette?: string;
+  accessories?: string;
+  inspiration?: string;
+}
+
+export interface CharacterDetails {
+  habits?: string;
+  flaws?: string;
+  likes?: string;
+  dislikes?: string;
+  intimateLife?: string;
+}
+
+export interface CharacterAdditional {
+  skills?: string;
+  assets?: string;
+  secrets?: string;
+}
+
 export interface Character {
   _id: string;
   name: string;
   slug: string;
   characterId: string;
   avatarImage: string;
-  about: string;
-  backstory: string;
   tags: string[];
   isPublic: boolean;
   owner?: {
@@ -14,6 +64,13 @@ export interface Character {
     slug?: string;
     displayName?: string;
   } | string;
+  core?: CharacterCore;
+  visual?: CharacterVisual;
+  aesthetics?: CharacterAesthetics;
+  details?: CharacterDetails;
+  complexRelationships?: RelationshipLink[];
+  backstory?: string;
+  additional?: CharacterAdditional;
   createdAt: string;
   updatedAt: string;
 }

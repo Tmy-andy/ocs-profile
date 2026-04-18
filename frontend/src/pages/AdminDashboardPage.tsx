@@ -11,29 +11,11 @@ const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
-  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    avatarImage: '',
-    about: '',
-    backstory: '',
-    tags: [] as string[],
-  });
-  const [editLoading, setEditLoading] = useState(false);
-  const [tagInput, setTagInput] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
-  const [passwordOpen, setPasswordOpen] = useState(false);
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
   const [me, setMe] = useState<User | null>(null);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -121,55 +103,7 @@ const AdminDashboardPage = () => {
   };
 
   const handleEditClick = (character: Character) => {
-    setEditingCharacter(character);
-    setEditFormData({
-      name: character.name,
-      avatarImage: character.avatarImage,
-      about: character.about,
-      backstory: character.backstory,
-      tags: character.tags,
-    });
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setEditFormData({
-      ...editFormData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleAddTag = () => {
-    if (tagInput.trim() && editFormData.tags.length < 10) {
-      setEditFormData({
-        ...editFormData,
-        tags: [...editFormData.tags, tagInput.trim()],
-      });
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (index: number) => {
-    setEditFormData({
-      ...editFormData,
-      tags: editFormData.tags.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCharacter) return;
-
-    setEditLoading(true);
-    try {
-      await characterService.update(editingCharacter._id, editFormData);
-      if (me) await fetchCharacters(me.slug || me.username);
-      setEditingCharacter(null);
-      alert('Cập nhật thành công!');
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Cập nhật thất bại');
-    } finally {
-      setEditLoading(false);
-    }
+    navigate(`/edit/${character._id}`);
   };
 
   const handleLogout = () => {
@@ -192,34 +126,6 @@ const AdminDashboardPage = () => {
       setInviteOpen(false);
     } finally {
       setInviteLoading(false);
-    }
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('Mật khẩu mới nhập lại không khớp');
-      return;
-    }
-
-    if (passwordForm.newPassword === passwordForm.currentPassword) {
-      setPasswordError('Mật khẩu mới phải khác mật khẩu hiện tại');
-      return;
-    }
-
-    setPasswordLoading(true);
-    try {
-      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
-      alert('Đổi mật khẩu thành công. Vui lòng đăng nhập lại.');
-      authService.logout();
-      navigate('/login');
-    } catch (error: any) {
-      const msg = error.response?.data?.errors?.[0] || error.response?.data?.message || 'Đổi mật khẩu thất bại';
-      setPasswordError(msg);
-    } finally {
-      setPasswordLoading(false);
     }
   };
 
@@ -431,7 +337,7 @@ const AdminDashboardPage = () => {
                           />
                           <div>
                             <div className="font-medium text-gray-900">{character.name}</div>
-                            <div className="text-sm text-gray-500 line-clamp-1 max-w-xs">{character.about}</div>
+                            <div className="text-sm text-gray-500 line-clamp-1 max-w-xs">{character.core?.occupation || ''}</div>
                           </div>
                         </div>
                       </td>
@@ -602,17 +508,12 @@ const AdminDashboardPage = () => {
                 />
               </div>
 
-              {/* About */}
-              <div>
-                <p className="text-base font-semibold text-gray-800 mb-2">Giới thiệu</p>
-                <p className="text-gray-900 whitespace-pre-wrap">{selectedCharacter.about}</p>
-              </div>
-
-              {/* Backstory */}
-              <div>
-                <p className="text-base font-semibold text-gray-800 mb-2">Câu chuyện</p>
-                <p className="text-gray-900 whitespace-pre-wrap">{selectedCharacter.backstory}</p>
-              </div>
+              {selectedCharacter.backstory && (
+                <div>
+                  <p className="text-base font-semibold text-gray-800 mb-2">Backstory</p>
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedCharacter.backstory}</p>
+                </div>
+              )}
 
               {/* Tags */}
               <div>
@@ -661,265 +562,6 @@ const AdminDashboardPage = () => {
         </div>
       )}
 
-      {/* Edit Character Modal */}
-      {editingCharacter && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setEditingCharacter(null)}
-        >
-          <div 
-            className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-              <h2 className="text-2xl font-bold text-gray-900">Chỉnh sửa: {editingCharacter.name}</h2>
-              <button
-                onClick={() => setEditingCharacter(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Edit Form */}
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tên Character <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editFormData.name}
-                  onChange={handleEditChange}
-                  required
-                  maxLength={100}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent text-gray-900"
-                />
-              </div>
-
-              {/* Avatar URL */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL Avatar <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="url"
-                  name="avatarImage"
-                  value={editFormData.avatarImage}
-                  onChange={handleEditChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent text-gray-900"
-                />
-                {editFormData.avatarImage && (
-                  <img src={editFormData.avatarImage} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                )}
-              </div>
-
-              {/* About */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giới thiệu <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="about"
-                  value={editFormData.about}
-                  onChange={handleEditChange}
-                  required
-                  maxLength={500}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent resize-none text-gray-900"
-                />
-                <p className="text-xs text-gray-500 mt-1">{editFormData.about.length}/500</p>
-              </div>
-
-              {/* Backstory */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Câu chuyện <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="backstory"
-                  value={editFormData.backstory}
-                  onChange={handleEditChange}
-                  required
-                  maxLength={2000}
-                  rows={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent resize-none text-gray-900"
-                />
-                <p className="text-xs text-gray-500 mt-1">{editFormData.backstory.length}/2000</p>
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags (tối đa 10)
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                    placeholder="Nhập tag và Enter"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent text-gray-900"
-                    disabled={editFormData.tags.length >= 10}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddTag}
-                    disabled={editFormData.tags.length >= 10}
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    Thêm
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {editFormData.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-blue-50 text-neon-blue text-sm rounded-lg border border-blue-100 flex items-center gap-2"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(index)}
-                        className="text-gray-400 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="flex-1 px-4 py-2.5 bg-neon-blue hover:bg-blue-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {editLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingCharacter(null)}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Hủy
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Change Password Modal */}
-      {passwordOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => !passwordLoading && setPasswordOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-md w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Đổi mật khẩu</h2>
-              <button
-                onClick={() => setPasswordOpen(false)}
-                disabled={passwordLoading}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
-              >
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleChangePassword} className="p-6 space-y-4">
-              {passwordError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-600 text-sm">{passwordError}</p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mật khẩu hiện tại <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  required
-                  autoComplete="current-password"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mật khẩu mới <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
-                  placeholder="ít nhất 6 ký tự"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nhập lại mật khẩu mới <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={passwordLoading}
-                  className="flex-1 px-4 py-2.5 bg-neon-blue hover:bg-blue-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {passwordLoading ? 'Đang đổi...' : 'Đổi mật khẩu'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPasswordOpen(false)}
-                  disabled={passwordLoading}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  Hủy
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Invite Modal */}
       {inviteOpen && (

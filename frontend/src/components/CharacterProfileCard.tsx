@@ -54,17 +54,13 @@ const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({ character }
             ))}
           </div>
 
-          {/* About Section */}
-          <Section title="About">
-            <p className="text-base italic">"{character.about}"</p>
-          </Section>
-
-          {/* Backstory Section */}
-          <Section title="Backstory">
-            <p className="text-sm leading-relaxed whitespace-pre-line">
-              {character.backstory}
-            </p>
-          </Section>
+          {character.backstory && (
+            <Section title="Backstory">
+              <p className="text-sm leading-relaxed whitespace-pre-line">
+                {character.backstory}
+              </p>
+            </Section>
+          )}
         </div>
       </div>
     </div>
