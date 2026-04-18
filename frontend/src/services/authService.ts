@@ -1,5 +1,5 @@
 import api from './api';
-import { LoginCredentials, User, RegisterPayload, Invite } from '../types';
+import { LoginCredentials, User, RegisterPayload, Invite, UpdateProfilePayload } from '../types';
 
 const AUTH_TOKEN_KEY = 'oc_admin_token';
 
@@ -37,6 +37,11 @@ const authService = {
 
   changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
     await api.post('/auth/change-password', { currentPassword, newPassword });
+  },
+
+  updateProfile: async (payload: UpdateProfilePayload): Promise<User> => {
+    const response = await api.patch('/auth/me', payload);
+    return response.data.data;
   },
 
   createInvite: async (): Promise<Invite> => {

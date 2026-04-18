@@ -47,6 +47,7 @@ export const login = async (req, res, next) => {
       data: {
         id: user._id,
         username: user.username,
+        slug: user.slug,
         displayName: user.displayName,
         email: user.email,
         role: user.role,
@@ -104,6 +105,68 @@ export const setupAdmin = async (req, res, next) => {
       message: 'Admin user created successfully'
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update own profile (username, slug, displayName, email)
+// @route   PATCH /api/auth/me
+// @access  Private
+export const updateProfile = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const { username, slug, displayName, email } = req.body;
+
+    if (username !== undefined && username !== user.username) {
+      const exists = await User.findOne({ username: username.toLowerCase(), _id: { $ne: user._id } });
+      if (exists) {
+        return res.status(409).json({ success: false, message: 'Username already taken' });
+      }
+      user.username = username;
+    }
+
+    if (slug !== undefined && slug !== user.slug) {
+      const exists = await User.findOne({ slug: slug.toLowerCase(), _id: { $ne: user._id } });
+      if (exists) {
+        return res.status(409).json({ success: false, message: 'Slug already taken' });
+      }
+      user.slug = slug;
+    }
+
+    if (displayName !== undefined) user.displayName = displayName;
+    if (email !== undefined) user.email = email || undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        username: user.username,
+        slug: user.slug,
+        displayName: user.displayName,
+        email: user.email,
+        role: user.role
+      },
+      message: 'Profile updated successfully'
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'Username or slug already taken' });
+    }
     next(error);
   }
 };
@@ -277,6 +340,7 @@ export const registerFromInvite = async (req, res, next) => {
       data: {
         id: user._id,
         username: user.username,
+        slug: user.slug,
         displayName: user.displayName,
         email: user.email,
         role: user.role,

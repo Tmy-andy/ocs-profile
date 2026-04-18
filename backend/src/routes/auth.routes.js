@@ -5,6 +5,7 @@ import {
   getMe,
   setupAdmin,
   changePassword,
+  updateProfile,
   createInvite,
   getInvite,
   registerFromInvite
@@ -67,6 +68,25 @@ router.post('/login', loginValidation, login);
 router.get('/me', protect, getMe);
 router.post('/setup', setupValidation, setupAdmin);
 router.post('/change-password', protect, changePasswordValidation, changePassword);
+
+const updateProfileValidation = [
+  body('username').optional()
+    .trim()
+    .isLength({ min: 3, max: 30 }).withMessage('Username must be 3-30 characters')
+    .matches(/^[a-zA-Z0-9_]+$/).withMessage('Username can only contain letters, numbers, underscores'),
+  body('slug').optional()
+    .trim()
+    .isLength({ min: 3, max: 40 }).withMessage('Slug must be 3-40 characters')
+    .matches(/^[a-z0-9-]+$/).withMessage('Slug can only contain lowercase letters, numbers, hyphens'),
+  body('displayName').optional()
+    .trim()
+    .isLength({ max: 50 }).withMessage('Display name cannot exceed 50 characters'),
+  body('email').optional({ checkFalsy: true })
+    .trim()
+    .isEmail().withMessage('Invalid email format')
+];
+
+router.patch('/me', protect, updateProfileValidation, updateProfile);
 
 router.post('/invites', protect, adminOnly, createInvite);
 router.get('/invites/:token', getInvite);

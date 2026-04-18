@@ -7,7 +7,7 @@ import Character from '../models/Character.model.js';
 export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find({ isActivated: true })
-      .select('username displayName email role createdAt')
+      .select('username slug displayName email role createdAt')
       .sort({ createdAt: -1 });
 
     const withCounts = await Promise.all(
@@ -16,6 +16,7 @@ export const getAllUsers = async (req, res, next) => {
         return {
           _id: u._id,
           username: u.username,
+          slug: u.slug,
           displayName: u.displayName,
           email: u.email,
           role: u.role,

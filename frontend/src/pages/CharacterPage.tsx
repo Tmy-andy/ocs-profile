@@ -7,19 +7,20 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import ErrorMessage from '../components/ErrorMessage';
 
 const CharacterPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, characterSlug, slug: ownerSlug } = useParams<{ id?: string; characterSlug?: string; slug?: string }>();
+  const lookupKey = characterSlug || id;
   const navigate = useNavigate();
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCharacter = async () => {
-    if (!id) return;
-    
+    if (!lookupKey) return;
+
     try {
       setLoading(true);
       setError(null);
-      const response = await characterService.getById(id);
+      const response = await characterService.getById(lookupKey);
       setCharacter(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load character');
@@ -30,7 +31,17 @@ const CharacterPage = () => {
 
   useEffect(() => {
     fetchCharacter();
-  }, [id]);
+  }, [lookupKey]);
+
+  const goBack = () => {
+    if (ownerSlug) {
+      navigate(`/${ownerSlug}`);
+    } else if (character?.owner && typeof character.owner === 'object') {
+      navigate(`/${character.owner.slug || character.owner.username}`);
+    } else {
+      navigate('/');
+    }
+  };
 
   if (loading) {
     return (
@@ -62,7 +73,7 @@ const CharacterPage = () => {
         {/* Back Button and Edit Button */}
         <div className="mb-6 flex items-center justify-between">
           <button
-            onClick={() => navigate('/')}
+            onClick={goBack}
             className="flex items-center gap-2 text-gray-400 hover:text-neon-blue transition-colors duration-300"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

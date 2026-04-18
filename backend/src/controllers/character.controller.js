@@ -12,7 +12,8 @@ export const getAllCharacters = async (req, res, next) => {
     const query = { isPublic: true };
 
     if (owner) {
-      const ownerUser = await User.findOne({ username: owner.toLowerCase() });
+      const ownerKey = owner.toLowerCase();
+      const ownerUser = await User.findOne({ $or: [{ slug: ownerKey }, { username: ownerKey }] });
       if (!ownerUser) {
         return res.status(200).json({
           success: true,
@@ -33,7 +34,7 @@ export const getAllCharacters = async (req, res, next) => {
     }
 
     const characters = await Character.find(query)
-      .populate('owner', 'username displayName')
+      .populate('owner', 'username slug displayName')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
@@ -65,9 +66,9 @@ export const getCharacterById = async (req, res, next) => {
     let character;
 
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      character = await Character.findById(id).populate('owner', 'username displayName').select('-__v');
+      character = await Character.findById(id).populate('owner', 'username slug displayName').select('-__v');
     } else {
-      character = await Character.findOne({ slug: id }).populate('owner', 'username displayName').select('-__v');
+      character = await Character.findOne({ slug: id }).populate('owner', 'username slug displayName').select('-__v');
     }
 
     if (!character) {

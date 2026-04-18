@@ -157,7 +157,7 @@ const RegisterPage = () => {
               minLength={3}
               maxLength={30}
               pattern="[a-zA-Z0-9_]+"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
               placeholder="chỉ chữ, số, underscore"
             />
           </div>
@@ -172,7 +172,7 @@ const RegisterPage = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
             />
           </div>
 
@@ -187,7 +187,7 @@ const RegisterPage = () => {
               onChange={handleChange}
               required
               maxLength={50}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
             />
           </div>
 
@@ -202,7 +202,7 @@ const RegisterPage = () => {
               onChange={handleChange}
               required
               minLength={6}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
               placeholder="ít nhất 6 ký tự"
             />
           </div>
@@ -218,7 +218,7 @@ const RegisterPage = () => {
               onChange={handleChange}
               required
               minLength={6}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
             />
           </div>
 

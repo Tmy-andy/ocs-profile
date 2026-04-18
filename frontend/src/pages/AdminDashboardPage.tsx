@@ -50,7 +50,7 @@ const AdminDashboardPage = () => {
         const currentUser = await authService.getCurrentUser();
         setMe({ ...currentUser, token: authService.getToken() || '' });
 
-        await fetchCharacters(currentUser.username);
+        await fetchCharacters(currentUser.slug || currentUser.username);
 
         if (currentUser.role === 'admin') {
           await fetchUsers();
@@ -162,7 +162,7 @@ const AdminDashboardPage = () => {
     setEditLoading(true);
     try {
       await characterService.update(editingCharacter._id, editFormData);
-      if (me) await fetchCharacters(me.username);
+      if (me) await fetchCharacters(me.slug || me.username);
       setEditingCharacter(null);
       alert('Cập nhật thành công!');
     } catch (error: any) {
@@ -277,17 +277,14 @@ const AdminDashboardPage = () => {
               </button>
               
               <button
-                onClick={() => {
-                  setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                  setPasswordError(null);
-                  setPasswordOpen(true);
-                }}
+                onClick={() => navigate('/settings')}
                 className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span>Đổi mật khẩu</span>
+                <span>Cài đặt</span>
               </button>
 
               <button
@@ -439,7 +436,7 @@ const AdminDashboardPage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <code className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">{character.slug}</code>
+                        <code className="text-xs text-gray-900 bg-gray-100 px-2 py-1 rounded">{character.slug}</code>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
@@ -633,7 +630,7 @@ const AdminDashboardPage = () => {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Slug</p>
-                  <code className="text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded">{selectedCharacter.slug}</code>
+                  <code className="text-xs text-gray-900 bg-gray-100 px-2 py-1 rounded">{selectedCharacter.slug}</code>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Ngày tạo</p>
@@ -701,7 +698,7 @@ const AdminDashboardPage = () => {
                   onChange={handleEditChange}
                   required
                   maxLength={100}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent text-gray-900"
                 />
               </div>
 
@@ -716,7 +713,7 @@ const AdminDashboardPage = () => {
                   value={editFormData.avatarImage}
                   onChange={handleEditChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent text-gray-900"
                 />
                 {editFormData.avatarImage && (
                   <img src={editFormData.avatarImage} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
@@ -735,7 +732,7 @@ const AdminDashboardPage = () => {
                   required
                   maxLength={500}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent resize-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent resize-none text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">{editFormData.about.length}/500</p>
               </div>
@@ -752,7 +749,7 @@ const AdminDashboardPage = () => {
                   required
                   maxLength={2000}
                   rows={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent resize-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent resize-none text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">{editFormData.backstory.length}/2000</p>
               </div>
@@ -774,7 +771,7 @@ const AdminDashboardPage = () => {
                       }
                     }}
                     placeholder="Nhập tag và Enter"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent text-gray-900"
                     disabled={editFormData.tags.length >= 10}
                   />
                   <button
@@ -867,7 +864,7 @@ const AdminDashboardPage = () => {
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
                 />
               </div>
 
@@ -882,7 +879,7 @@ const AdminDashboardPage = () => {
                   required
                   minLength={6}
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
                   placeholder="ít nhất 6 ký tự"
                 />
               </div>
@@ -898,7 +895,7 @@ const AdminDashboardPage = () => {
                   required
                   minLength={6}
                   autoComplete="new-password"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-neon-blue focus:border-transparent outline-none text-gray-900"
                 />
               </div>
 
@@ -963,7 +960,7 @@ const AdminDashboardPage = () => {
                       type="text"
                       value={inviteLink}
                       readOnly
-                      className="w-full px-4 py-3 pr-24 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700 font-mono"
+                      className="w-full px-4 py-3 pr-24 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 font-mono"
                       onFocus={(e) => e.target.select()}
                     />
                     <button

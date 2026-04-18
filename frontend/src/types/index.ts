@@ -11,6 +11,7 @@ export interface Character {
   owner?: {
     _id: string;
     username: string;
+    slug?: string;
     displayName?: string;
   } | string;
   createdAt: string;
@@ -20,6 +21,7 @@ export interface Character {
 export interface UserSummary {
   _id: string;
   username: string;
+  slug?: string;
   displayName?: string;
   email?: string;
   role: 'admin' | 'member';
@@ -30,10 +32,18 @@ export interface UserSummary {
 export interface User {
   id: string;
   username: string;
+  slug?: string;
   displayName?: string;
   email?: string;
   role: 'admin' | 'member';
   token: string;
+}
+
+export interface UpdateProfilePayload {
+  username?: string;
+  slug?: string;
+  displayName?: string;
+  email?: string;
 }
 
 export interface LoginCredentials {
