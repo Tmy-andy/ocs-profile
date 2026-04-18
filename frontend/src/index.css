@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-blue-primary: #00d4ff;
+    --color-blue-secondary: #3b82f6;
+    --color-dark-bg: #0a0a0f;
+    --color-dark-card: #1a1a24;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-dark-900 text-white font-sans antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(0, 212, 255, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl shadow-glass;
+  }
+
+  .glass-card-hover {
+    @apply transition-all duration-300;
+    border-color: rgba(0, 212, 255, 0.2);
+  }
+  
+  .glass-card-hover:hover {
+    border-color: rgba(0, 212, 255, 0.7);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
+  }
+
+  .sakura-glow-border {
+    @apply border-2;
+    border-color: rgba(0, 212, 255, 0.7);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
+  }
+
+  .text-gradient-sakura {
+    @apply bg-gradient-to-r from-sakura-400 to-sakura-600 bg-clip-text text-transparent;
+  }
+
+  .btn-sakura {
+    @apply bg-gradient-to-r from-sakura-500 to-sakura-600 hover:from-sakura-600 hover:to-sakura-700 text-white font-medium px-6 py-3 rounded-lg shadow-glow-pink transition-all duration-300 hover:shadow-glow-pink-lg hover:scale-105;
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-gradient-to-r from-dark-600 via-dark-500 to-dark-600 bg-[length:200%_100%];
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .tag {
+    @apply px-3 py-1.5 rounded-full text-sm font-medium bg-dark-600/50 border border-white/10 backdrop-blur-sm transition-all duration-200 hover:bg-dark-600/80;
+  }
+  
+  .tag:hover {
+    border-color: rgba(0, 212, 255, 0.7);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
+  }
+
+  .section-card {
+    @apply glass-card p-6 mb-4;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-800;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 212, 255, 0.5);
+  @apply rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 212, 255, 0.7);
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(0, 212, 255, 0.3);
+  @apply text-white;
+}
